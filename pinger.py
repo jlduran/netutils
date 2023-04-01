@@ -61,7 +61,15 @@ def parse_args():
         "--special",
         type=str,
         default="",
-        choices=["no-payload", "tcp", "udp", "wrong", "warp", "every-other"],
+        choices=[
+            "no-payload",
+            "not-mine",
+            "tcp",
+            "udp",
+            "wrong",
+            "warp",
+            "every-other",
+        ],
         help="Send a special packet",
     )
     parser.add_argument(
@@ -108,6 +116,12 @@ def parse_args():
         "--count", type=int, default=1, help="Number of packets to send"
     )
     parser.add_argument("--dup", action="store_true", help="Duplicate packets")
+    parser.add_argument(
+        "--verbose",
+        action="store_false",
+        default=True,
+        help="Toggle verbosity on/off",
+    )
     parser.add_argument("--version", action="version", version="%(prog)s 1.0")
 
     return parser.parse_args()
@@ -157,6 +171,9 @@ def build_response_packet(echo, ip, icmp, oip_ihl, special):
         # Build a package with a wrong last byte
         payload_no_last_byte = sc.bytes_hex(load)[:-2]
         load = (sc.hex_bytes(payload_no_last_byte)) + b"\x00"
+    if special == "not-mine":
+        # Modify the ICMP Identifier field
+        oicmp.id += 1
 
     if icmp.type in icmp_id_seq_types:
         pkt = ip / icmp / load
@@ -241,8 +258,9 @@ def main():
         str(args.count),
         "-t",
         str(args.count),
-        "-v",
     ]
+    if args.verbose:
+        command += ["-v"]
     if args.request == "mask":
         command += ["-Mm"]
     if args.request == "timestamp":
