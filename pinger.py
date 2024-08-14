@@ -252,7 +252,6 @@ def main():
     subprocess.run(["ifconfig", tun.iface, "up"], check=True)
     subprocess.run(["ifconfig", tun.iface, args.src, args.dst], check=True)
     command = [
-        # "/usr/obj/usr/src/amd64.amd64/sbin/ping/ping",
         "/sbin/ping",
         "-c",
         str(args.count),
