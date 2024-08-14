@@ -48,19 +48,29 @@ def parse_args():
     # IP arguments
     parser.add_argument("--ihl", type=int, default=None, help="IHL")
     parser.add_argument(
-        "--flags", type=str, default="", choices=["DF", "MF"], help="IP flags"
+        "--flags",
+        type=str,
+        default=0,
+        choices=["DF", "MF"],
+        help="IP flags",
     )
     parser.add_argument(
         "--opts",
         type=str,
-        default="",
+        default=None,
         choices=["EOL", "NOP", "NOP-40", "unk", "unk-40"] + routing_options,
         help="Include IP options",
     )
     parser.add_argument(
+        "--oip_ihl",
+        type=int,
+        default=None,
+        help="Inner packet IHL",
+    )
+    parser.add_argument(
         "--special",
         type=str,
-        default="",
+        default=None,
         choices=[
             "no-payload",
             "not-mine",
@@ -71,12 +81,6 @@ def parse_args():
             "every-other",
         ],
         help="Send a special packet",
-    )
-    parser.add_argument(
-        "--oip_ihl",
-        type=int,
-        default=None,
-        help="Inner packet IHL",
     )
     # ICMP arguments
     # Match names with <netinet/ip_icmp.h>
@@ -107,7 +111,7 @@ def parse_args():
     parser.add_argument(
         "--request",
         type=str,
-        default="",
+        default=None,
         choices=["mask", "timestamp"],
         help="Request type",
     )
@@ -240,17 +244,17 @@ def generate_ip_options(opts):
 def main():
     """P I N G E R"""
     args = parse_args()
-    opts = generate_ip_options(args.opts)
+    tun = sc.TunTapInterface(args.iface)
+    subprocess.run(["ifconfig", tun.iface, "up"], check=True)
+    subprocess.run(["ifconfig", tun.iface, args.src, args.dst], check=True)
+    ip_opts = generate_ip_options(args.opts)
     ip = sc.IP(
         ihl=args.ihl,
         flags=args.flags,
         src=args.dst,
         dst=args.src,
-        options=opts,
+        options=ip_opts,
     )
-    tun = sc.TunTapInterface(args.iface)
-    subprocess.run(["ifconfig", tun.iface, "up"], check=True)
-    subprocess.run(["ifconfig", tun.iface, args.src, args.dst], check=True)
     command = [
         "/sbin/ping",
         "-c",
@@ -264,7 +268,7 @@ def main():
         command += ["-Mm"]
     if args.request == "timestamp":
         command += ["-Mt"]
-    if args.special != "":
+    if args.special:
         command += ["-p1"]
     if args.opts in routing_options:
         command += ["-R"]
