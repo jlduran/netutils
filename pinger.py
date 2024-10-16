@@ -204,11 +204,11 @@ def generate_ip_options(opts):
     ]
     routers_zero = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     if opts == "EOL":
-        options = sc.IPOption(b"\x00")
+        options = sc.IPOption_EOL()
     elif opts == "NOP":
-        options = sc.IPOption(b"\x01")
+        options = sc.IPOption_NOP()
     elif opts == "NOP-40":
-        options = sc.IPOption(b"\x01" * 40)
+        options = sc.IPOption_NOP() * 40
     elif opts == "RR":
         subprocess.run(["sysctl", "net.inet.ip.process_options=0"], check=True)
         options = sc.IPOption_RR(pointer=40, routers=routers)
@@ -232,10 +232,10 @@ def generate_ip_options(opts):
         options = sc.IPOption_SSRR(length=3, routers=routers_zero)
     elif opts == "unk":
         subprocess.run(["sysctl", "net.inet.ip.process_options=0"], check=True)
-        options = sc.IPOption(b"\x9f")
+        options = b"\x9f"
     elif opts == "unk-40":
         subprocess.run(["sysctl", "net.inet.ip.process_options=0"], check=True)
-        options = sc.IPOption(b"\x9f" * 40)
+        options = b"\x9f" * 40
     else:
         options = []
     return options
